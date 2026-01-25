@@ -56,12 +56,19 @@
             <div class="flex items-center gap-4 flex-wrap">
                 <div class="relative group">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"></i>
-                    <input type="text" id="search-input" placeholder="Cari..." class="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 w-40 transition-all focus:w-64">
+                    <input type="text" id="search-input" placeholder="Cari..." class="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 w-32 transition-all focus:w-48">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hari Ke</label>
+                    <select id="filter-hari" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-28">
+                        <option value="ALL">Semua</option>
+                        </select>
                 </div>
 
                 <div class="flex flex-col gap-1">
                     <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Benda Uji</label>
-                    <select id="filter-bu" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-32">
+                    <select id="filter-bu" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-28">
                         <option value="ALL">Semua BU</option>
                         <option value="M1">M1</option><option value="M4">M4</option><option value="M10">M10</option><option value="M14">M14</option>
                         <option value="MK22">MK22</option><option value="MK21">MK21</option><option value="MK18">MK18</option><option value="MK17">MK17</option>
@@ -70,7 +77,7 @@
 
                 <div class="flex flex-col gap-1" id="filter-fase-container">
                     <label class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Fase Pengujian</label>
-                    <select id="filter-fase" class="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500 cursor-pointer w-32">
+                    <select id="filter-fase" class="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500 cursor-pointer w-28">
                         <option value="PH1" selected>PH1</option>
                         <option value="PH2">PH2</option>
                         <option value="HCP">HCP</option>
@@ -165,9 +172,48 @@
             document.getElementById('loader').classList.remove('hidden');
             onValue(ref(db, `${basePath}/${endpoint}`), (snapshot) => {
                 rawData = snapshot.val() || {};
+                
+                // POPULASI FILTER HARI (DINAMIS)
+                populateHariFilter();
+
                 renderTable();
                 document.getElementById('loader').classList.add('hidden');
             });
+        }
+
+        // FUNGSI BARU: Populate Filter Hari Dinamis
+        function populateHariFilter() {
+            const select = document.getElementById('filter-hari');
+            const currentVal = select.value;
+            const daysSet = new Set();
+
+            // Kumpulkan semua hari yang ada di data
+            Object.values(rawData).forEach(item => {
+                if (item.hari_ke !== undefined && item.hari_ke !== null) {
+                    daysSet.add(parseInt(item.hari_ke));
+                }
+            });
+
+            // Urutkan (asc)
+            const sortedDays = Array.from(daysSet).sort((a,b) => a - b);
+
+            // Reset options (Keep ALL)
+            select.innerHTML = `<option value="ALL">Semua</option>`;
+
+            // Tambahkan opsi yang tersedia
+            sortedDays.forEach(day => {
+                const opt = document.createElement('option');
+                opt.value = day;
+                opt.innerText = `Hari ${day}`;
+                select.appendChild(opt);
+            });
+
+            // Restore value jika masih valid
+            if (sortedDays.includes(parseInt(currentVal)) || currentVal === 'ALL') {
+                select.value = currentVal;
+            } else {
+                select.value = 'ALL';
+            }
         }
 
         window.switchContext = (context) => {
@@ -194,6 +240,7 @@
             const thead = document.getElementById('table-header');
             const filterBu = document.getElementById('filter-bu').value;
             const filterFase = document.getElementById('filter-fase').value;
+            const filterHari = document.getElementById('filter-hari').value; 
             const searchVal = document.getElementById('search-input').value.toLowerCase();
             const countEl = document.getElementById('data-count');
 
@@ -207,9 +254,14 @@
                 const matchBu = filterBu === 'ALL' || item.bu === filterBu;
                 const searchStr = JSON.stringify(item).toLowerCase();
                 const matchSearch = searchStr.includes(searchVal);
+                
+                // Filter Hari logic
+                const matchHari = filterHari === 'ALL' || String(item.hari_ke) === filterHari;
+
                 let matchFase = true;
                 if (currentContext === 'logs') matchFase = (item.fase === filterFase);
-                return matchBu && matchSearch && matchFase;
+                
+                return matchBu && matchSearch && matchFase && matchHari;
             });
 
             // 2. SORTING
@@ -223,7 +275,7 @@
             countEl.innerText = dataArray.length;
 
             if (dataArray.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="100" class="p-8 text-center text-slate-400 italic">Tidak ada data ditemukan untuk fase ${filterFase}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="100" class="p-8 text-center text-slate-400 italic">Tidak ada data ditemukan.</td></tr>`;
                 return;
             }
 
@@ -237,10 +289,10 @@
                         ...commonCols, 
                         { k: 'v_on_1', l: 'ON 1' }, 
                         { k: 'v_on_2', l: 'ON 2' }, 
-                        { k: 'on_avg', l: 'ON AVG' },   // Updated Key
+                        { k: 'on_avg', l: 'ON AVG' },   
                         { k: 'v_off_1', l: 'OFF 1' }, 
                         { k: 'v_off_2', l: 'OFF 2' }, 
-                        { k: 'off_avg', l: 'OFF AVG' }  // Updated Key
+                        { k: 'off_avg', l: 'OFF AVG' }  
                     ];
                 } else if (filterFase === 'PH2') {
                     cols = [...commonCols, { k: 'v_off_1', l: 'REST 1' }, { k: 'v_off_2', l: 'REST 2' }, { k: 'v_off_avg', l: 'REST AVG' }];
@@ -291,6 +343,7 @@
         document.getElementById('search-input').addEventListener('input', window.renderTable);
         document.getElementById('filter-bu').addEventListener('change', window.renderTable);
         document.getElementById('filter-fase').addEventListener('change', window.renderTable);
+        document.getElementById('filter-hari').addEventListener('change', window.renderTable);
 
         // --- EDIT FEATURE ---
 
@@ -308,7 +361,6 @@
 
             if (currentContext === 'logs') {
                 if (data.fase === 'PH1') {
-                    // Corrected Keys for PH1
                     fieldConfig = [
                         { key: 'bu', label: 'BU', editable: false },
                         { key: 'fase', label: 'FASE', editable: false },
@@ -320,8 +372,8 @@
                         { key: 'v_on_2', label: 'ON 2', editable: false },
                         { key: 'v_off_1', label: 'OFF 1', editable: false },
                         { key: 'v_off_2', label: 'OFF 2', editable: false },
-                        { key: 'on_avg', label: 'ON AVG', editable: true },   // Key: on_avg
-                        { key: 'off_avg', label: 'OFF AVG', editable: true }  // Key: off_avg
+                        { key: 'on_avg', label: 'ON AVG', editable: true },   
+                        { key: 'off_avg', label: 'OFF AVG', editable: true }  
                     ];
                 } else if (data.fase === 'PH2') {
                     fieldConfig = [
@@ -370,12 +422,10 @@
             });
 
             // --- AUTO CALCULATION LOGIC ---
-            // Sesuaikan logic dengan nama key yang aktif
             if (data.fase === 'PH1') {
                 applyAutoCalcLogic(form, 'off_avg', 'v_off_1', 'v_off_2');
                 applyAutoCalcLogic(form, 'on_avg', 'v_on_1', 'v_on_2');
             } else {
-                // PH2 & HCP use standard keys
                 applyAutoCalcLogic(form, 'v_off_avg', 'v_off_1', 'v_off_2');
             }
 
