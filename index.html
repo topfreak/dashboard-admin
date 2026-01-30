@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPRCP Admin Dashboard</title>
+    <title>SPRCP Admin Dashboard v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -20,7 +20,8 @@
         .action-col { position: sticky; right: 0; background: white; z-index: 30; border-left: 2px solid #f1f5f9; }
         tr:hover .action-col { background: #f0fdf4; }
         
-        .auto-updated { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; transition: all 0.3s ease; }
+        /* Style untuk menampilkan Nilai Asli di bawah Nilai Offset */
+        .org-val { font-size: 9px; color: #94a3b8; display: block; margin-top: 2px; font-style: italic; }
     </style>
 </head>
 <body class="text-slate-900 bg-slate-50 h-screen flex flex-col overflow-hidden">
@@ -33,75 +34,160 @@
     <header class="bg-white border-b-4 border-slate-900 px-6 py-4 flex justify-between items-center z-10 shadow-sm shrink-0">
         <div class="flex items-center gap-4">
             <div class="bg-slate-900 text-white p-2 rounded-lg">
-                <i class="fas fa-shield-alt text-xl"></i>
+                <i class="fas fa-user-secret text-xl"></i>
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900 uppercase italic tracking-tight">Admin Dashboard</h1>
-                <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Manajemen Data Database</p>
+                <p class="text-[10px] font-bold text-rose-600 uppercase tracking-widest">Data Control & Manipulation Center</p>
             </div>
         </div>
         <div class="flex gap-2">
             <button onclick="switchContext('logs')" id="btn-tab-logs" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all tab-active shadow-md">
-                <i class="fas fa-database mr-2"></i> Log Data (Potensial)
+                <i class="fas fa-database mr-2"></i> Log Data
             </button>
             <button onclick="switchContext('current_logs')" id="btn-tab-current" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-white text-slate-500 hover:bg-slate-100 border border-slate-200">
-                <i class="fas fa-bolt mr-2"></i> Log Arus (Current)
+                <i class="fas fa-bolt mr-2"></i> Log Arus
+            </button>
+            <button onclick="switchContext('offset')" id="btn-tab-offset" class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-white text-purple-600 hover:bg-purple-50 border border-purple-200">
+                <i class="fas fa-magic mr-2"></i> Config Offset
             </button>
         </div>
     </header>
 
     <main class="flex-1 overflow-hidden p-6 relative">
         
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between mb-6 shrink-0">
-            <div class="flex items-center gap-4 flex-wrap">
-                <div class="relative group">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"></i>
-                    <input type="text" id="search-input" placeholder="Cari..." class="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 w-32 transition-all focus:w-48">
-                </div>
+        <div id="panel-data" class="h-full flex flex-col">
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-4 items-center justify-between mb-6 shrink-0">
+                <div class="flex items-center gap-4 flex-wrap">
+                    <div class="relative group">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"></i>
+                        <input type="text" id="search-input" placeholder="Cari..." class="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-500 w-32 transition-all focus:w-48">
+                    </div>
 
-                <div class="flex flex-col gap-1">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hari Ke</label>
-                    <select id="filter-hari" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-28">
-                        <option value="ALL">Semua</option>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Hari Ke</label>
+                        <select id="filter-hari" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-28">
+                            <option value="ALL">Semua</option>
                         </select>
-                </div>
+                    </div>
 
-                <div class="flex flex-col gap-1">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Benda Uji</label>
-                    <select id="filter-bu" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-28">
-                        <option value="ALL">Semua BU</option>
-                        <option value="M1">M1</option><option value="M4">M4</option><option value="M10">M10</option><option value="M14">M14</option>
-                        <option value="MK22">MK22</option><option value="MK21">MK21</option><option value="MK18">MK18</option><option value="MK17">MK17</option>
-                    </select>
-                </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Benda Uji</label>
+                        <select id="filter-bu" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-emerald-500 cursor-pointer w-28">
+                            <option value="ALL">Semua BU</option>
+                            <option value="M1">M1</option><option value="M4">M4</option><option value="M10">M10</option><option value="M14">M14</option>
+                            <option value="MK22">MK22</option><option value="MK21">MK21</option><option value="MK18">MK18</option><option value="MK17">MK17</option>
+                        </select>
+                    </div>
 
-                <div class="flex flex-col gap-1" id="filter-fase-container">
-                    <label class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Fase Pengujian</label>
-                    <select id="filter-fase" class="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500 cursor-pointer w-28">
-                        <option value="PH1" selected>PH1</option>
-                        <option value="PH2">PH2</option>
-                        <option value="HCP">HCP</option>
-                    </select>
+                    <div class="flex flex-col gap-1" id="filter-fase-container">
+                        <label class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest ml-1">Fase Pengujian</label>
+                        <select id="filter-fase" class="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500 cursor-pointer w-28">
+                            <option value="PH1" selected>PH1</option>
+                            <option value="PH2">PH2</option>
+                            <option value="HCP">HCP</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
+                    Total Data: <span id="data-count" class="text-slate-900 text-sm block">0</span>
                 </div>
             </div>
-            
-            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
-                Total Data: <span id="data-count" class="text-slate-900 text-sm block">0</span>
+
+            <div class="bg-white rounded-[1.5rem] border border-slate-200 shadow-xl overflow-hidden h-[calc(100%-5rem)] flex flex-col">
+                <div class="overflow-auto custom-scrollbar flex-1 relative">
+                    <table class="w-full text-left text-[11px] border-collapse">
+                        <thead class="bg-slate-50 font-black text-slate-500 uppercase tracking-tight border-b border-slate-200 sticky top-0 z-20">
+                            <tr id="table-header"></tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-100 text-slate-700 font-medium"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-[1.5rem] border border-slate-200 shadow-xl overflow-hidden h-[calc(100%-5rem)] flex flex-col">
-            <div class="overflow-auto custom-scrollbar flex-1 relative">
-                <table class="w-full text-left text-[11px] border-collapse">
-                    <thead class="bg-slate-50 font-black text-slate-500 uppercase tracking-tight border-b border-slate-200 sticky top-0 z-20">
-                        <tr id="table-header">
-                            </tr>
-                    </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-100 text-slate-700 font-medium">
-                        </tbody>
-                </table>
+        <div id="panel-offset" class="h-full hidden flex flex-col">
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-xl h-full flex flex-col overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 uppercase italic">Konfigurasi Manipulasi Data (Offset)</h2>
+                        <p class="text-xs text-slate-500 mt-1">Atur penambahan nilai acak agar grafik terlihat memiliki selisih signifikan.</p>
+                    </div>
+                    <button onclick="saveCurrentConfig()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs shadow-lg shadow-purple-200 transition-all flex items-center gap-2">
+                        <i class="fas fa-save"></i> Simpan Konfigurasi
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div class="col-span-1 space-y-4">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest">Target Benda Uji</label>
+                        <select id="offset-bu-select" class="w-full px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 focus:border-purple-500 outline-none transition-all text-sm">
+                            <option value="M1">M1</option><option value="M4">M4</option><option value="M10">M10</option><option value="M14">M14</option>
+                            <option value="MK22">MK22</option><option value="MK21">MK21</option><option value="MK18">MK18</option><option value="MK17">MK17</option>
+                        </select>
+                        
+                        <div class="bg-purple-50 p-5 rounded-2xl text-purple-800 text-[11px] border border-purple-100 leading-relaxed">
+                            <p class="font-black uppercase mb-2"><i class="fas fa-info-circle"></i> Cara Kerja:</p>
+                            <ul class="list-disc pl-4 space-y-1">
+                                <li>Firmware akan mendownload setting ini.</li>
+                                <li>Setiap pengukuran, alat akan menambahkan nilai acak antara <b>Min</b> dan <b>Max</b>.</li>
+                                <li>Data yang tampil di Master Dashboard adalah data yang sudah di-offset.</li>
+                                <li>Data Asli tetap disimpan di database (hidden).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-emerald-50/50 p-6 rounded-[1.5rem] border border-emerald-100 hover:shadow-lg transition-all">
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-4 text-lg"><i class="fas fa-check"></i></div>
+                            <h3 class="font-black text-emerald-800 uppercase text-sm mb-4">Patch Repair</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Min Offset (mV)</label>
+                                    <input type="number" id="off-pr-min" step="0.1" class="w-full mt-1 px-4 py-3 bg-white border border-emerald-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-emerald-400 outline-none text-emerald-700" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Max Offset (mV)</label>
+                                    <input type="number" id="off-pr-max" step="0.1" class="w-full mt-1 px-4 py-3 bg-white border border-emerald-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-emerald-400 outline-none text-emerald-700" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50/50 p-6 rounded-[1.5rem] border border-amber-100 hover:shadow-lg transition-all">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mb-4 text-lg"><i class="fas fa-exclamation"></i></div>
+                            <h3 class="font-black text-amber-800 uppercase text-sm mb-4">Boundary</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Min Offset (mV)</label>
+                                    <input type="number" id="off-bo-min" step="0.1" class="w-full mt-1 px-4 py-3 bg-white border border-amber-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-amber-400 outline-none text-amber-700" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Max Offset (mV)</label>
+                                    <input type="number" id="off-bo-max" step="0.1" class="w-full mt-1 px-4 py-3 bg-white border border-amber-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-amber-400 outline-none text-amber-700" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50/50 p-6 rounded-[1.5rem] border border-blue-100 hover:shadow-lg transition-all">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 text-lg"><i class="fas fa-times"></i></div>
+                            <h3 class="font-black text-blue-800 uppercase text-sm mb-4">Existing</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Min Offset (mV)</label>
+                                    <input type="number" id="off-ex-min" step="0.1" class="w-full mt-1 px-4 py-3 bg-white border border-blue-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-400 outline-none text-blue-700" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Max Offset (mV)</label>
+                                    <input type="number" id="off-ex-max" step="0.1" class="w-full mt-1 px-4 py-3 bg-white border border-blue-200 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-400 outline-none text-blue-700" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
     </main>
 
     <div id="edit-modal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
@@ -111,9 +197,7 @@
                     <h3 class="text-lg font-black text-slate-800 uppercase italic">Edit Data</h3>
                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest" id="modal-id-display">ID: -</p>
                 </div>
-                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 flex items-center justify-center transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 flex items-center justify-center transition-all"><i class="fas fa-times"></i></button>
             </div>
             
             <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
@@ -121,20 +205,14 @@
                     <i class="fas fa-magic text-base mt-0.5"></i>
                     <div>
                         <p class="uppercase tracking-wider mb-1">Mode Edit Pintar</p>
-                        <p class="font-normal opacity-80">
-                            Edit nilai <span class="font-bold bg-white px-1 rounded border border-blue-200 text-blue-800">AVG</span> untuk otomatis menyesuaikan nilai 1 dan 2.
-                        </p>
+                        <p class="font-normal opacity-80">Mengedit nilai <b>AVG</b> akan otomatis menyesuaikan nilai pembacaan 1 dan 2 agar konsisten.</p>
                     </div>
                 </div>
-
-                <form id="edit-form" class="grid grid-cols-2 gap-4">
-                    </form>
+                <form id="edit-form" class="grid grid-cols-2 gap-4"></form>
             </div>
             <div class="p-6 border-t border-slate-100 bg-slate-50 rounded-b-[2rem] flex justify-end gap-3">
                 <button onclick="closeModal()" class="px-6 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-200 transition-colors uppercase tracking-wider">Batal</button>
-                <button onclick="saveChanges()" class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-emerald-600 shadow-lg hover:shadow-emerald-500/30 transition-all uppercase tracking-wider flex items-center gap-2">
-                    <i class="fas fa-save"></i> Simpan
-                </button>
+                <button onclick="saveChanges()" class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-emerald-600 shadow-lg hover:shadow-emerald-500/30 transition-all uppercase tracking-wider flex items-center gap-2"><i class="fas fa-save"></i> Simpan</button>
             </div>
         </div>
     </div>
@@ -142,7 +220,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, remove, update, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyA_tdRuWtUshubvm-lx2Et8OfB771wI9iU", 
@@ -161,80 +239,134 @@
 
         let currentContext = 'logs'; 
         let rawData = {}; 
+        let offsetConfig = {}; 
         let currentEditId = null;
 
         signInAnonymously(auth).then(() => console.log("Logged in")).catch(e => Swal.fire("Error", e.message, "error"));
 
-        onAuthStateChanged(auth, (user) => { if (user) initDataListener(); });
+        onAuthStateChanged(auth, (user) => { 
+            if (user) {
+                initDataListener();
+                loadOffsetConfig();
+            }
+        });
 
+        // --- DATA LISTENER ---
         function initDataListener() {
             const endpoint = currentContext === 'logs' ? 'logs' : 'current_logs';
-            document.getElementById('loader').classList.remove('hidden');
+            if(currentContext !== 'offset') document.getElementById('loader').classList.remove('hidden');
+            
             onValue(ref(db, `${basePath}/${endpoint}`), (snapshot) => {
                 rawData = snapshot.val() || {};
+                // Panggil render hanya jika window.renderTable sudah siap
                 
-                // POPULASI FILTER HARI (DINAMIS)
-                populateHariFilter();
-
-                renderTable();
+                try {
+                    populateHariFilter();
+                    if (typeof window.renderTable === 'function') {
+                        window.renderTable();
+                    } else {
+                        console.warn("window.renderTable belum siap");
+                        // Coba lagi sebentar lagi kalau belum siap (fallback sederhana)
+                        setTimeout(() => { if (typeof window.renderTable === 'function') window.renderTable(); }, 500);
+                    }
+                } catch(e) {
+                    console.error("Error renderTable:", e);
+                }
+                
                 document.getElementById('loader').classList.add('hidden');
+            }, (error) => {
+                console.error("Firebase read failed:", error);
+                document.getElementById('loader').classList.add('hidden');
+                Swal.fire("Error", "Gagal mengambil data: " + error.message, "error");
             });
         }
 
-        // FUNGSI BARU: Populate Filter Hari Dinamis
+        // --- OFFSET CONFIGURATION LOGIC ---
+        function loadOffsetConfig() {
+            onValue(ref(db, `${basePath}/research_config/offsets`), (s) => {
+                offsetConfig = s.val() || {};
+                if(currentContext === 'offset') {
+                    if (typeof window.renderOffsetInputs === 'function') window.renderOffsetInputs();
+                }
+            });
+        }
+
+        window.renderOffsetInputs = () => {
+            const bu = document.getElementById('offset-bu-select').value;
+            const conf = offsetConfig[bu] || {};
+            
+            const setVal = (id, zone, type) => {
+                document.getElementById(id).value = conf[zone]?.[type] || 0;
+            };
+
+            setVal('off-pr-min', 'Patch Repair', 'min'); setVal('off-pr-max', 'Patch Repair', 'max');
+            setVal('off-bo-min', 'Boundary', 'min'); setVal('off-bo-max', 'Boundary', 'max');
+            setVal('off-ex-min', 'Existing', 'min'); setVal('off-ex-max', 'Existing', 'max');
+        };
+
+        window.saveCurrentConfig = () => {
+            const bu = document.getElementById('offset-bu-select').value;
+            const configData = {
+                "Patch Repair": { min: parseFloat(document.getElementById('off-pr-min').value), max: parseFloat(document.getElementById('off-pr-max').value) },
+                "Boundary": { min: parseFloat(document.getElementById('off-bo-min').value), max: parseFloat(document.getElementById('off-bo-max').value) },
+                "Existing": { min: parseFloat(document.getElementById('off-ex-min').value), max: parseFloat(document.getElementById('off-ex-max').value) }
+            };
+            
+            update(ref(db, `${basePath}/research_config/offsets/${bu}`), configData)
+                .then(() => Swal.fire('Tersimpan', `Konfigurasi offset untuk ${bu} disimpan.`, 'success'))
+                .catch(e => Swal.fire('Error', e.message, 'error'));
+        };
+
+        document.getElementById('offset-bu-select').addEventListener('change', window.renderOffsetInputs);
+
+        // --- FILTER HARI ---
         function populateHariFilter() {
             const select = document.getElementById('filter-hari');
             const currentVal = select.value;
             const daysSet = new Set();
-
-            // Kumpulkan semua hari yang ada di data
-            Object.values(rawData).forEach(item => {
-                if (item.hari_ke !== undefined && item.hari_ke !== null) {
-                    daysSet.add(parseInt(item.hari_ke));
-                }
-            });
-
-            // Urutkan (asc)
+            Object.values(rawData).forEach(item => { if (item.hari_ke !== undefined) daysSet.add(parseInt(item.hari_ke)); });
             const sortedDays = Array.from(daysSet).sort((a,b) => a - b);
-
-            // Reset options (Keep ALL)
             select.innerHTML = `<option value="ALL">Semua</option>`;
-
-            // Tambahkan opsi yang tersedia
             sortedDays.forEach(day => {
-                const opt = document.createElement('option');
-                opt.value = day;
-                opt.innerText = `Hari ${day}`;
-                select.appendChild(opt);
+                const opt = document.createElement('option'); opt.value = day; opt.innerText = `Hari ${day}`; select.appendChild(opt);
             });
-
-            // Restore value jika masih valid
-            if (sortedDays.includes(parseInt(currentVal)) || currentVal === 'ALL') {
-                select.value = currentVal;
-            } else {
-                select.value = 'ALL';
-            }
+            if (sortedDays.includes(parseInt(currentVal)) || currentVal === 'ALL') select.value = currentVal; else select.value = 'ALL';
         }
 
+        // --- CONTEXT SWITCHER ---
         window.switchContext = (context) => {
             currentContext = context;
             const btnLogs = document.getElementById('btn-tab-logs');
             const btnCurrent = document.getElementById('btn-tab-current');
+            const btnOffset = document.getElementById('btn-tab-offset');
+            const panelData = document.getElementById('panel-data');
+            const panelOffset = document.getElementById('panel-offset');
             const filterFaseContainer = document.getElementById('filter-fase-container');
 
-            if(context === 'logs') {
-                btnLogs.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all tab-active shadow-md";
-                btnCurrent.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-white text-slate-500 hover:bg-slate-100 border border-slate-200";
-                filterFaseContainer.style.display = 'flex';
-                document.getElementById('filter-fase').value = 'PH1';
+            // Reset Styles
+            [btnLogs, btnCurrent, btnOffset].forEach(b => b.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-white text-slate-500 hover:bg-slate-100 border border-slate-200");
+            
+            if(context === 'offset') {
+                btnOffset.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-purple-600 text-white shadow-lg shadow-purple-200 border border-purple-600";
+                panelData.classList.add('hidden');
+                panelOffset.classList.remove('hidden');
+                window.renderOffsetInputs();
             } else {
-                btnCurrent.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all tab-active shadow-md";
-                btnLogs.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-white text-slate-500 hover:bg-slate-100 border border-slate-200";
-                filterFaseContainer.style.display = 'none';
+                panelData.classList.remove('hidden');
+                panelOffset.classList.add('hidden');
+                if(context === 'logs') {
+                    btnLogs.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all tab-active shadow-md";
+                    filterFaseContainer.style.display = 'flex';
+                    document.getElementById('filter-fase').value = 'PH1';
+                } else {
+                    btnCurrent.className = "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all tab-active shadow-md";
+                    filterFaseContainer.style.display = 'none';
+                }
+                initDataListener();
             }
-            initDataListener();
         };
 
+        // --- RENDER TABLE ---
         window.renderTable = () => {
             const tbody = document.getElementById('table-body');
             const thead = document.getElementById('table-header');
@@ -244,84 +376,81 @@
             const searchVal = document.getElementById('search-input').value.toLowerCase();
             const countEl = document.getElementById('data-count');
 
-            tbody.innerHTML = '';
-            thead.innerHTML = '';
+            tbody.innerHTML = ''; thead.innerHTML = '';
 
             let dataArray = Object.entries(rawData).map(([key, val]) => ({ id: key, ...val }));
 
-            // 1. FILTERING
             dataArray = dataArray.filter(item => {
                 const matchBu = filterBu === 'ALL' || item.bu === filterBu;
-                const searchStr = JSON.stringify(item).toLowerCase();
-                const matchSearch = searchStr.includes(searchVal);
-                
-                // Filter Hari logic
+                const matchSearch = JSON.stringify(item).toLowerCase().includes(searchVal);
                 const matchHari = filterHari === 'ALL' || String(item.hari_ke) === filterHari;
-
                 let matchFase = true;
                 if (currentContext === 'logs') matchFase = (item.fase === filterFase);
-                
                 return matchBu && matchSearch && matchFase && matchHari;
             });
 
-            // 2. SORTING
-            dataArray.sort((a, b) => {
-                if ((a.hari_ke || 0) !== (b.hari_ke || 0)) return (b.hari_ke || 0) - (a.hari_ke || 0);
-                if ((a.bu || '') !== (b.bu || '')) return (a.bu || '').localeCompare(b.bu || '');
-                if ((a.tp || '') !== (b.tp || '')) return (a.tp || '').localeCompare(b.tp || '');
-                return 0;
-            });
-
+            dataArray.sort((a, b) => ((b.hari_ke || 0) - (a.hari_ke || 0)) || (a.bu || '').localeCompare(b.bu || '') || (a.tp || '').localeCompare(b.tp || ''));
             countEl.innerText = dataArray.length;
 
-            if (dataArray.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="100" class="p-8 text-center text-slate-400 italic">Tidak ada data ditemukan.</td></tr>`;
-                return;
-            }
+            if (dataArray.length === 0) { tbody.innerHTML = `<tr><td colspan="100" class="p-8 text-center text-slate-400 italic">Tidak ada data ditemukan.</td></tr>`; return; }
 
-            // 3. DEFINE COLUMNS
+            // DEFINE COLUMNS WITH ORIGINAL VALUE SUPPORT
             let cols = [];
-            if (currentContext === 'logs') {
-                const commonCols = [{ k: 'hari_ke', l: 'HARI KE' }, { k: 'bu', l: 'BENDA UJI' }, { k: 'tp', l: 'TITIK' }];
+            // Helper untuk kolom data: k=key utama (offset), l=label, orgK=key original (backup)
+            const col = (k, l, orgK) => ({ k, l, orgK });
 
+            if (currentContext === 'logs') {
+                const commonCols = [{ k: 'hari_ke', l: 'HARI' }, { k: 'bu', l: 'BU' }, { k: 'tp', l: 'TITIK' }];
                 if (filterFase === 'PH1') {
-                    cols = [
-                        ...commonCols, 
-                        { k: 'v_on_1', l: 'ON 1' }, 
-                        { k: 'v_on_2', l: 'ON 2' }, 
-                        { k: 'on_avg', l: 'ON AVG' },   
-                        { k: 'v_off_1', l: 'OFF 1' }, 
-                        { k: 'v_off_2', l: 'OFF 2' }, 
-                        { k: 'off_avg', l: 'OFF AVG' }  
+                    cols = [...commonCols, 
+                        col('v_on_1', 'ON 1', 'v_on_1'), // Biasanya raw tidak disimpan per sampel, tapi jika ada logic di firmware
+                        col('v_on_2', 'ON 2', 'v_on_2'), 
+                        col('on_avg', 'ON AVG', 'org_on_avg'),   
+                        col('v_off_1', 'OFF 1', 'v_off_1'), 
+                        col('v_off_2', 'OFF 2', 'v_off_2'), 
+                        col('off_avg', 'OFF AVG', 'org_off_avg')  
                     ];
                 } else if (filterFase === 'PH2') {
-                    cols = [...commonCols, { k: 'v_off_1', l: 'REST 1' }, { k: 'v_off_2', l: 'REST 2' }, { k: 'v_off_avg', l: 'REST AVG' }];
+                    cols = [...commonCols, col('v_off_1', 'REST 1'), col('v_off_2', 'REST 2'), col('v_off_avg', 'REST AVG', 'org_v_off_avg')];
                 } else if (filterFase === 'HCP') {
-                    cols = [...commonCols, { k: 'v_off_1', l: 'HCP 1' }, { k: 'v_off_2', l: 'HCP 2' }, { k: 'v_off_avg', l: 'HCP AVG' }];
+                    cols = [...commonCols, col('v_off_1', 'HCP 1'), col('v_off_2', 'HCP 2'), col('v_off_avg', 'HCP AVG', 'org_v_off_avg')];
                 }
             } else {
-                cols = [{ k: 'hari_ke', l: 'HARI KE' }, { k: 'bu', l: 'BENDA UJI' }, { k: 'i_ma', l: 'ARUS (mA)' }];
+                cols = [{ k: 'hari_ke', l: 'HARI' }, { k: 'bu', l: 'BU' }, col('i_ma', 'ARUS (mA)', 'org_i_ma')];
             }
 
-            // RENDER HEADER
+            // HEADER
             let headerHTML = `<th class="px-4 py-3 text-slate-400 font-extrabold w-10">#</th>`;
             cols.forEach(c => { headerHTML += `<th class="px-4 py-3 font-bold text-slate-600">${c.l}</th>`; });
             headerHTML += `<th class="px-4 py-3 font-black text-slate-800 text-center action-col">AKSI</th>`;
             thead.innerHTML = headerHTML;
 
-            // RENDER BODY
+            // BODY
             dataArray.forEach((item, index) => {
                 let rowHTML = `<td class="px-4 py-3 font-mono text-slate-400 text-[10px]">${index + 1}</td>`;
                 
                 cols.forEach(c => {
                     let val = item[c.k];
-                    let displayVal = val;
-                    if (val === undefined || val === null) displayVal = '-';
-                    else if (typeof val === 'number') displayVal = Number.isInteger(val) ? val : val.toFixed(3);
-                    else if (c.k === 'bu') displayVal = `<span class="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] font-bold">${val}</span>`;
-                    else if (c.k === 'fase') {
-                         let color = val === 'HCP' ? 'text-indigo-600 bg-indigo-50' : 'text-emerald-600 bg-emerald-50';
-                         displayVal = `<span class="${color} px-1.5 py-0.5 rounded text-[10px] font-bold">${val}</span>`;
+                    let orgVal = c.orgK ? item[c.orgK] : undefined;
+                    
+                    // FIX: Handle tipe data dengan aman (hindari crash .toFixed pada string)
+                    let displayVal = '-';
+                    if (val !== undefined && val !== null) {
+                        displayVal = typeof val === 'number' 
+                            ? (Number.isInteger(val) ? val : val.toFixed(3)) 
+                            : val;
+                    }
+                    
+                    if (c.k === 'bu') {
+                        displayVal = `<span class="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] font-bold">${val}</span>`;
+                    } else if (typeof val === 'number') {
+                        // TAMPILKAN DUA NILAI: OFFSET (Tebal) & ASLI (Kecil/Abu)
+                        if (orgVal !== undefined && orgVal !== null && typeof orgVal === 'number') {
+                            displayVal = `<div class="flex flex-col">
+                                <span class="text-emerald-700 font-black">${val.toFixed(3)}</span>
+                                <span class="org-val" title="Nilai Asli dari Sensor">Asli: ${orgVal.toFixed(3)}</span>
+                            </div>`;
+                        }
                     }
                     rowHTML += `<td class="px-4 py-3 border-b border-slate-50 group-hover:bg-slate-50 transition-colors whitespace-nowrap">${displayVal}</td>`;
                 });
@@ -332,21 +461,11 @@
                             <button onclick="deleteData('${item.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm flex items-center justify-center"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>`;
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors group";
-                tr.innerHTML = rowHTML;
-                tbody.appendChild(tr);
+                const tr = document.createElement('tr'); tr.className = "hover:bg-slate-50 transition-colors group"; tr.innerHTML = rowHTML; tbody.appendChild(tr);
             });
         };
 
-        document.getElementById('search-input').addEventListener('input', window.renderTable);
-        document.getElementById('filter-bu').addEventListener('change', window.renderTable);
-        document.getElementById('filter-fase').addEventListener('change', window.renderTable);
-        document.getElementById('filter-hari').addEventListener('change', window.renderTable);
-
-        // --- EDIT FEATURE ---
-
+        // --- EDIT MODAL (SAMA SEPERTI SEBELUMNYA) ---
         window.openEditModal = (id) => {
             currentEditId = id;
             const data = rawData[id];
@@ -358,146 +477,76 @@
             form.innerHTML = '';
 
             let fieldConfig = [];
-
             if (currentContext === 'logs') {
                 if (data.fase === 'PH1') {
                     fieldConfig = [
-                        { key: 'bu', label: 'BU', editable: false },
-                        { key: 'fase', label: 'FASE', editable: false },
-                        { key: 'hari_ke', label: 'HARI KE', editable: true },
-                        { key: 'tipe_titik', label: 'TIPE TITIK', editable: false },
-                        { key: 'tp', label: 'TP', editable: false },
-                        { key: 'suhu', label: 'SUHU', editable: false },
-                        { key: 'v_on_1', label: 'ON 1', editable: false },
-                        { key: 'v_on_2', label: 'ON 2', editable: false },
-                        { key: 'v_off_1', label: 'OFF 1', editable: false },
-                        { key: 'v_off_2', label: 'OFF 2', editable: false },
-                        { key: 'on_avg', label: 'ON AVG', editable: true },   
-                        { key: 'off_avg', label: 'OFF AVG', editable: true }  
+                        { key: 'bu', label: 'BU', editable: false }, { key: 'hari_ke', label: 'HARI KE', editable: true },
+                        { key: 'tp', label: 'TP', editable: false }, { key: 'suhu', label: 'SUHU', editable: false },
+                        { key: 'v_on_1', label: 'ON 1', editable: false }, { key: 'v_on_2', label: 'ON 2', editable: false },
+                        { key: 'on_avg', label: 'ON AVG', editable: true }, { key: 'v_off_1', label: 'OFF 1', editable: false },
+                        { key: 'v_off_2', label: 'OFF 2', editable: false }, { key: 'off_avg', label: 'OFF AVG', editable: true }  
                     ];
-                } else if (data.fase === 'PH2') {
+                } else {
                     fieldConfig = [
-                        { key: 'bu', label: 'BU', editable: false },
-                        { key: 'fase', label: 'FASE', editable: false },
-                        { key: 'hari_ke', label: 'HARI KE', editable: true },
-                        { key: 'tipe_titik', label: 'TIPE TITIK', editable: false },
-                        { key: 'tp', label: 'TP', editable: false },
-                        { key: 'suhu', label: 'SUHU', editable: false },
-                        { key: 'v_off_1', label: 'REST 1', editable: false },
-                        { key: 'v_off_2', label: 'REST 2', editable: false },
-                        { key: 'v_off_avg', label: 'REST AVG', editable: true }
-                    ];
-                } else if (data.fase === 'HCP') {
-                    fieldConfig = [
-                        { key: 'bu', label: 'BU', editable: false },
-                        { key: 'fase', label: 'FASE', editable: false },
-                        { key: 'hari_ke', label: 'HARI KE', editable: true },
-                        { key: 'tipe_titik', label: 'TIPE TITIK', editable: false },
-                        { key: 'tp', label: 'TP', editable: false },
-                        { key: 'suhu', label: 'SUHU', editable: false },
-                        { key: 'v_off_1', label: 'HCP 1', editable: false },
-                        { key: 'v_off_2', label: 'HCP 2', editable: false },
-                        { key: 'v_off_avg', label: 'HCP AVG', editable: true }
+                        { key: 'bu', label: 'BU', editable: false }, { key: 'hari_ke', label: 'HARI KE', editable: true },
+                        { key: 'tp', label: 'TP', editable: false }, { key: 'suhu', label: 'SUHU', editable: false },
+                        { key: 'v_off_1', label: 'VAL 1', editable: false }, { key: 'v_off_2', label: 'VAL 2', editable: false },
+                        { key: 'v_off_avg', label: 'AVG', editable: true }
                     ];
                 }
             } else {
-                fieldConfig = [
-                    { key: 'bu', label: 'BU', editable: false },
-                    { key: 'hari_ke', label: 'HARI KE', editable: true },
-                    { key: 'i_ma', label: 'ARUS (MA)', editable: true }
-                ];
+                fieldConfig = [{ key: 'bu', label: 'BU', editable: false }, { key: 'hari_ke', label: 'HARI KE', editable: true }, { key: 'i_ma', label: 'ARUS (MA)', editable: true }];
             }
 
             fieldConfig.forEach(conf => {
                 const val = data[conf.key] !== undefined ? data[conf.key] : '';
                 const bgClass = conf.editable ? 'bg-white text-slate-800 border-emerald-500 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed';
                 const readOnlyAttr = conf.editable ? '' : 'readonly';
-
-                form.innerHTML += `
-                    <div class="col-span-1 flex flex-col gap-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${conf.label}</label>
-                        <input type="text" name="${conf.key}" value="${val}" ${readOnlyAttr} class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold outline-none transition-all ${bgClass}">
-                    </div>
-                `;
+                form.innerHTML += `<div class="col-span-1 flex flex-col gap-1"><label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">${conf.label}</label><input type="text" name="${conf.key}" value="${val}" ${readOnlyAttr} class="w-full px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold outline-none transition-all ${bgClass}"></div>`;
             });
 
-            // --- AUTO CALCULATION LOGIC ---
+            // Logic Kalkulasi Otomatis (Jika Edit AVG -> Update Nilai 1 & 2)
             if (data.fase === 'PH1') {
                 applyAutoCalcLogic(form, 'off_avg', 'v_off_1', 'v_off_2');
                 applyAutoCalcLogic(form, 'on_avg', 'v_on_1', 'v_on_2');
-            } else {
+            } else if(currentContext === 'logs') {
                 applyAutoCalcLogic(form, 'v_off_avg', 'v_off_1', 'v_off_2');
             }
 
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); modalPanel.classList.add('scale-100'); }, 10);
+            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); modalPanel.classList.add('scale-100'); }, 10);
         };
 
         function applyAutoCalcLogic(form, avgName, item1Name, item2Name) {
             const avgInput = form.querySelector(`input[name="${avgName}"]`);
             const input1 = form.querySelector(`input[name="${item1Name}"]`);
             const input2 = form.querySelector(`input[name="${item2Name}"]`);
-
             if (avgInput && input1 && input2) {
                 const initialAvg = parseFloat(avgInput.value) || 0;
-                const initial1 = parseFloat(input1.value) || 0;
-                const initial2 = parseFloat(input2.value) || 0;
-
-                const offset1 = initial1 - initialAvg;
-                const offset2 = initial2 - initialAvg;
-
+                const offset1 = (parseFloat(input1.value)||0) - initialAvg;
+                const offset2 = (parseFloat(input2.value)||0) - initialAvg;
                 avgInput.addEventListener('input', (e) => {
                     const newAvg = parseFloat(e.target.value);
                     if (!isNaN(newAvg)) {
-                        const newVal1 = newAvg + offset1;
-                        const newVal2 = newAvg + offset2;
-                        input1.value = newVal1.toFixed(3); 
-                        input2.value = newVal2.toFixed(3);
-
-                        input1.classList.add('auto-updated');
-                        input2.classList.add('auto-updated');
-                        setTimeout(() => {
-                            input1.classList.remove('auto-updated');
-                            input2.classList.remove('auto-updated');
-                        }, 500);
+                        input1.value = (newAvg + offset1).toFixed(3); 
+                        input2.value = (newAvg + offset2).toFixed(3);
+                        input1.classList.add('auto-updated'); input2.classList.add('auto-updated');
+                        setTimeout(() => { input1.classList.remove('auto-updated'); input2.classList.remove('auto-updated'); }, 500);
                     }
                 });
             }
         }
 
-        window.closeModal = () => {
-            const modal = document.getElementById('edit-modal');
-            modal.classList.add('opacity-0');
-            document.getElementById('modal-panel').classList.remove('scale-100');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        };
-
+        window.closeModal = () => { const m = document.getElementById('edit-modal'); m.classList.add('opacity-0'); document.getElementById('modal-panel').classList.remove('scale-100'); setTimeout(() => m.classList.add('hidden'), 300); };
         window.saveChanges = () => {
-            const formData = new FormData(document.getElementById('edit-form'));
+            const fd = new FormData(document.getElementById('edit-form'));
             const updates = {};
-            for (let [k, v] of formData.entries()) {
-                if (!isNaN(parseFloat(v)) && isFinite(v)) updates[k] = parseFloat(v);
-                else if (v === 'true' || v === 'false') updates[k] = (v === 'true');
-                else updates[k] = v;
-            }
-            update(ref(db, `${basePath}/${currentContext}/${currentEditId}`), updates)
-                .then(() => { Swal.fire({icon:'success', title:'Tersimpan', timer:1000, showConfirmButton:false}); closeModal(); })
-                .catch(e => Swal.fire('Error', e.message, 'error'));
+            for (let [k, v] of fd.entries()) { if (!isNaN(parseFloat(v)) && isFinite(v)) updates[k] = parseFloat(v); else updates[k] = v; }
+            update(ref(db, `${basePath}/${currentContext}/${currentEditId}`), updates).then(() => { Swal.fire({icon:'success', title:'Tersimpan', timer:1000, showConfirmButton:false}); closeModal(); });
         };
+        window.deleteData = (id) => { Swal.fire({title: 'Hapus?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#e11d48'}).then((res) => { if(res.isConfirmed) remove(ref(db, `${basePath}/${currentContext}/${id}`)); }); };
 
-        window.deleteData = (id) => {
-            Swal.fire({
-                title: 'Hapus Data?', text: "Tidak bisa dikembalikan!", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#e11d48', confirmButtonText: 'Ya, Hapus'
-            }).then((res) => {
-                if(res.isConfirmed) remove(ref(db, `${basePath}/${currentContext}/${id}`)).then(() => Swal.fire({icon:'success', title:'Terhapus', timer:1000, showConfirmButton:false}));
-            });
-        };
-
-        window.openEditModal = window.openEditModal;
-        window.closeModal = window.closeModal;
-        window.saveChanges = window.saveChanges;
-        window.deleteData = window.deleteData;
+        // Expose to Global
+        window.openEditModal = window.openEditModal; window.closeModal = window.closeModal; window.saveChanges = window.saveChanges; window.deleteData = window.deleteData;
     </script>
 </body>
 </html>
